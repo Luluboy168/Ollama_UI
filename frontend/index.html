@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ollama 聊天室</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body>
+  <div id="app" class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>聊天室列表</h2>
+      <ul>
+        <li
+          v-for="session in sessions" 
+          :key="session.id"
+          :class="{ active: session.id === currentSessionId }"
+        >
+          <span @click="loadSession(session.id)" class="session-title">
+            #{{ session.id }} - {{ session.title }}
+          </span>
+          <button class="delete-btn" @click.stop="deleteSession(session.id)">🗑</button>
+        </li>
+      </ul>
+      <button @click="createSession">建立聊天室</button>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-area" v-if="currentSessionId">
+      <div id="chat-box">
+        <div v-for="msg in messages" :key="msg.created_at" :class="['message', msg.role]">
+          {{ msg.role === 'user' ? '👤' : '🤖' }}: {{ msg.content }}
+        </div>
+      </div>
+
+      <div class="input-area">
+        <input type="text" v-model="userInput" placeholder="輸入訊息..." @keyup.enter="sendMessage" />
+        <button @click="sendMessage">送出</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const sessions = ref([]);
+        const messages = ref([]);
+        const userInput = ref('');
+        const currentSessionId = ref(null);
+        const apiBase = 'http://127.0.0.1:8000';
+
+        const listSessions = async () => {
+          const res = await fetch(`${apiBase}/sessions/`);
+          sessions.value = await res.json();
+        };
+
+        const createSession = async () => {
+          const title = prompt("聊天室標題？") || "新聊天室";
+          if (!title) return;
+          await fetch(`${apiBase}/sessions/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title }),
+          });
+          await listSessions();
+        };
+
+        const loadSession = async (id) => {
+          currentSessionId.value = id;
+          const res = await fetch(`${apiBase}/msgs/${id}`);
+          messages.value = await res.json();
+          setTimeout(() => {
+            const chatBox = document.getElementById("chat-box");
+            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+          }, 100);
+        };
+
+        const deleteSession = async(id) => {
+          if(!confirm("Delete chat?")) return;
+
+          await fetch(`${apiBase}/sessions/${id}`, {
+            method: "DELETE",
+          });
+
+          if(currentSessionId.value === id){
+            currentSessionId.value = null;
+            messages.value = [];
+          }
+
+          await listSessions();
+        }
+
+        const sendMessage = async () => {
+          const text = userInput.value.trim();
+          if (!text || !currentSessionId.value) return;
+          userInput.value = '';
+          await fetch(`${apiBase}/msgs/${currentSessionId.value}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_msg: text }),
+          });
+          await loadSession(currentSessionId.value);
+        };
+
+        onMounted(() => {
+          listSessions();
+        });
+
+        return { sessions, messages, userInput, currentSessionId, createSession, loadSession, deleteSession, sendMessage };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
