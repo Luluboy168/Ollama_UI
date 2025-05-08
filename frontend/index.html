@@ -42,7 +42,7 @@
   </div>
 
   <script>
-    const { createApp, ref, onMounted } = Vue;
+    const { createApp, ref, onMounted, nextTick } = Vue;
 
     createApp({
       setup() {
@@ -51,6 +51,13 @@
         const userInput = ref('');
         const currentSessionId = ref(null);
         const apiBase = 'http://127.0.0.1:8000';
+
+        const scrollToBottom = () => {
+          const chatBox = document.getElementById("chat-box");
+          if (chatBox) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+          }
+        };
 
         const listSessions = async () => {
           const res = await fetch(`${apiBase}/sessions/`);
@@ -97,12 +104,32 @@
           const text = userInput.value.trim();
           if (!text || !currentSessionId.value) return;
           userInput.value = '';
-          await fetch(`${apiBase}/msgs/${currentSessionId.value}`, {
+
+          messages.value.push({ role: 'user', content: text });
+
+          const response = await fetch(`${apiBase}/msgs/${currentSessionId.value}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user_msg: text }),
           });
-          await loadSession(currentSessionId.value);
+          const assistantMsg = { role: 'assistant', content: '' };
+          messages.value = [...messages.value];
+          await nextTick();
+          scrollToBottom();
+          
+          messages.value.push(assistantMsg);
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder("utf-8");
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            assistantMsg.content += decoder.decode(value, { stream: true });
+
+            // Force Vue to re-render by triggering reactivity
+            messages.value = [...messages.value];
+            scrollToBottom();
+          } 
         };
 
         onMounted(() => {

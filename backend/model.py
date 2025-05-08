@@ -1,11 +1,13 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import requests
+import json
 
 # gemma3:1b 
 # ollama run gemma3:1b 
@@ -110,24 +112,35 @@ def post_message(session_id: int, msg: MessageCreate):
     db.add(user_msg)
     db.commit()
 
-    # Call Ollama API
-    try:
-        response = requests.post("http://localhost:11434/api/generate", json={
-            "model": "llama2:latest",
-            "prompt": msg.user_msg,
-            "stream": False
-        })
-        response.raise_for_status()
-        assistant_reply = response.json()["response"]
-    except Exception as e:
-        assistant_reply = "[錯誤] 無法從 Ollama 取得回答。"
+    def save_full_response(full_response):
+        assistant_msg = ChatMessage(session_id=session_id, role="assistant", content=full_response)
+        db.add(assistant_msg)
+        db.commit()
+        db.close()
 
-    assistant_msg = ChatMessage(session_id=session_id, role="assistant", content=assistant_reply)
-    db.add(assistant_msg)
-    db.commit()
-    db.close()
+    def event_stream():
+        # Call Ollama API
+        try:
+            full = []
+            with requests.post("http://localhost:11434/api/generate", json={
+                "model": "llama2:latest",
+                "prompt": msg.user_msg,
+                "stream": True
+            }, stream=True) as r:
+                for line in r.iter_lines(chunk_size=512):
+                    if line:
+                        data = json.loads(line.decode("utf-8"))
+                        if "response" in data:
+                            chunk = data["response"]
+                            full.append(chunk)
+                            yield chunk + "\n"
+        except Exception as e:
+            yield "[錯誤] 無法從 Ollama 取得回答。"
+        finally:
+            save_full_response(''.join(full))
 
-    return {"user": msg.user_msg, "assistant": assistant_reply}
+
+    return StreamingResponse(event_stream(), media_type="text/plain")
 
 # ---------------------
 # Ping Test Route
