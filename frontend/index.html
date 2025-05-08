@@ -28,6 +28,15 @@
 
     <!-- Chat Area -->
     <div class="chat-area" v-if="currentSessionId">
+      <div class="model-selector">
+        <label for="model">模型：</label>
+        <select v-model="selectedModel" id="model">
+          <option value="gemma3:1b">Gemma 3 (1b)</option>
+          <option value="gemma3:27b">Gemma 3 (1b)</option>
+          <option value="llama3.1:latest">LLaMA 3.1</option>
+          <option value="deepseek-r1:32b">DeepSeek-r1 (32b)</option>
+        </select>
+      </div>
       <div id="chat-box">
         <div v-for="msg in messages" :key="msg.created_at" :class="['message', msg.role]">
           {{ msg.role === 'user' ? '👤' : '🤖' }}: {{ msg.content }}
@@ -42,7 +51,7 @@
   </div>
 
   <script>
-    const { createApp, ref, onMounted, nextTick } = Vue;
+    const { createApp, ref, onMounted, nextTick, watch } = Vue;
 
     createApp({
       setup() {
@@ -51,6 +60,11 @@
         const userInput = ref('');
         const currentSessionId = ref(null);
         const apiBase = 'http://127.0.0.1:8000';
+        const selectedModel = ref(localStorage.getItem('selectedModel') || 'gemma3:1b')
+
+        watch(selectedModel, (newModel) => {
+          localStorage.setItem('selectedModel', newModel)
+        })
 
         const scrollToBottom = () => {
           const chatBox = document.getElementById("chat-box");
@@ -110,13 +124,13 @@
           const response = await fetch(`${apiBase}/msgs/${currentSessionId.value}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_msg: text }),
+            body: JSON.stringify({ user_msg: text, model: selectedModel.value }),
           });
           const assistantMsg = { role: 'assistant', content: '' };
           messages.value = [...messages.value];
           await nextTick();
           scrollToBottom();
-          
+
           messages.value.push(assistantMsg);
           const reader = response.body.getReader();
           const decoder = new TextDecoder("utf-8");
@@ -136,7 +150,7 @@
           listSessions();
         });
 
-        return { sessions, messages, userInput, currentSessionId, createSession, loadSession, deleteSession, sendMessage };
+        return { sessions, messages, userInput, currentSessionId, createSession, loadSession, deleteSession, sendMessage, selectedModel };
       }
     }).mount('#app');
   </script>

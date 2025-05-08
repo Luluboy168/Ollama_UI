@@ -59,6 +59,7 @@ class SessionCreate(BaseModel):
 
 class MessageCreate(BaseModel):
     user_msg: str
+    model: str = "gemma3:1b"
 
 # ---------------------
 # Session Routes
@@ -123,7 +124,7 @@ def post_message(session_id: int, msg: MessageCreate):
         try:
             full = []
             with requests.post("http://localhost:11434/api/generate", json={
-                "model": "llama2:latest",
+                "model": msg.model,
                 "prompt": msg.user_msg,
                 "stream": True
             }, stream=True) as r:

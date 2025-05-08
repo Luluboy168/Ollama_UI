@@ -126,3 +126,21 @@ button {
 button:hover {
   background: #16a085;
 }
+
+.model-selector {
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.model-selector label {
+  font-weight: bold;
+  margin-right: 0.3rem;
+}
+
+.model-selector select {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+}
