@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ollama 聊天室</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+</head>
+<body>
+  <div id="app" class="container">
+    <!-- Auth Bar -->
+    <div class="auth-bar">
+      <template v-if="isLoggedIn">
+        👤 {{ username }}
+        <button @click="logout">登出</button>
+      </template>
+      <template v-else>
+        <button @click="login">登入</button>
+        <button @click="register">註冊</button>
+      </template>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>聊天室列表</h2>
+      <ul>
+        <li
+          v-for="session in sessions" 
+          :key="session.id"
+          :class="{ active: session.id === currentSessionId }"
+        >
+          <span @click="loadSession(session.id)" class="session-title">
+            {{ session.title }}
+          </span>
+          <button class="edit-btn" @click.stop="editSession(session.id, session.title)">✏️</button>
+          <button class="delete-btn" @click.stop="deleteSession(session.id)">🗑</button>
+        </li>
+      </ul>
+      <button @click="createSession">建立聊天室</button>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-area" v-if="isLoggedIn && currentSessionId">
+      <div class="model-selector">
+        <label for="model">模型：</label>
+        <select v-model="selectedModel" id="model">
+          <option value="gemma3:1b">Gemma 3 (1b)</option>
+          <option value="gemma3:27b">Gemma 3 (1b)</option>
+          <option value="llama3.1:latest">LLaMA 3.1</option>
+          <option value="deepseek-r1:32b">DeepSeek-r1 (32b)</option>
+        </select>
+      </div>
+      <div id="chat-box">
+        <div v-for="msg in messages" :key="msg.created_at" :class="['message', msg.role]">
+          {{ msg.role === 'user' ? '👤' : '🤖' }}: {{ msg.content }}
+        </div>
+      </div>
+
+      <div class="input-area">
+        <input type="text" v-model="userInput" placeholder="輸入訊息..." @keyup.enter="sendMessage" />
+        <button @click="sendMessage">送出</button>
+      </div>
+    </div>
+    <div v-else-if="!isLoggedIn" class="chat-area">
+      <p>請先登入以使用聊天室功能。</p>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

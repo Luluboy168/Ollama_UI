@@ -1,0 +1,189 @@
+body {
+  margin: 0;
+  font-family: "Helvetica Neue", sans-serif;
+  background-color: #f5f5f5;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 240px;
+  background: #2c3e50;
+  color: white;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.sidebar h2 {
+  font-size: 1.2em;
+  margin-bottom: 12px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.sidebar li:hover {
+  background: #e6f0ff;
+}
+
+.sidebar ul li.active {
+  background-color: #d0ebff;
+  font-weight: bold;
+}
+
+.session-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: #d9534f;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  transition: color 0.2s;
+}
+
+.delete-btn:hover {
+  color: #a94442;
+}
+
+.edit-btn {
+  background: transparent;
+  border: none;
+  color: #d9534f;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  transition: color 0.2s;
+}
+
+.edit-btn:hover {
+  color: #a94442;
+}
+
+
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: white;
+}
+
+#chat-box {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 6px;
+  background: #fdfdfd;
+}
+
+.message {
+  margin: 4px 0;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.message.user {
+  background: #dff9fb;
+  align-self: flex-start;
+}
+
+.message.assistant {
+  background: #f6e58d;
+  align-self: flex-end;
+}
+
+.input-area {
+  display: flex;
+  gap: 8px;
+}
+
+input[type="text"] {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px 16px;
+  background: #1abc9c;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #16a085;
+}
+
+.model-selector {
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+
+.model-selector label {
+  font-weight: bold;
+  margin-right: 0.3rem;
+}
+
+.model-selector select {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+}
+
+.auth-bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: #222;
+  color: white;
+  padding: 10px 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom-left-radius: 8px;
+}
+
+.auth-bar button {
+  background: #007acc;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.auth-bar button:hover {
+  background: #005fa3;
+}
+
