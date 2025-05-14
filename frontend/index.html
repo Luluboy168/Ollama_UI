@@ -30,8 +30,9 @@
           :class="{ active: session.id === currentSessionId }"
         >
           <span @click="loadSession(session.id)" class="session-title">
-            #{{ session.id }} - {{ session.title }}
+            {{ session.title }}
           </span>
+          <button class="edit-btn" @click.stop="editSession(session.id, session.title)">✏️</button>
           <button class="delete-btn" @click.stop="deleteSession(session.id)">🗑</button>
         </li>
       </ul>
@@ -177,6 +178,17 @@
           await listSessions();
         };
 
+        const editSession = async (id, oldTitle) => {
+          const newTitle = prompt("修改聊天室標題：", oldTitle);
+          if (!newTitle || newTitle.trim() === oldTitle) return;
+          await fetch(`${apiBase}/sessions/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: newTitle.trim() }),
+          });
+          await listSessions();
+        };
+
         const loadSession = async (id) => {
           currentSessionId.value = id;
           const res = await fetch(`${apiBase}/msgs/${id}`, {
@@ -243,7 +255,7 @@
           }
         });
 
-        return { sessions, messages, userInput, currentSessionId,
+        return { sessions, messages, userInput, currentSessionId, editSession,
            createSession, loadSession, deleteSession, sendMessage, selectedModel,
            register, login, logout, isLoggedIn, username };
       }

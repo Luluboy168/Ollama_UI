@@ -83,6 +83,9 @@ class MessageCreate(BaseModel):
     user_msg: str
     model: str = "gemma3:1b"
 
+class SessionNameUpdate(BaseModel):
+    title: str
+
 # Allow frontend on all origins for development
 app.add_middleware(
     CORSMiddleware,
@@ -133,6 +136,19 @@ def list_sessions(current_user: User = Depends(get_current_user)):
     db.close()
     return [{"id": s.id, "title": s.title} for s in sessions]
 
+@app.put("/sessions/{session_id}")
+def update_session(session_id: int, session: SessionNameUpdate):
+    db = SessionLocal()
+    chat_session = db.query(ChatSession).filter_by(id=session_id).first()
+    if not chat_session:
+        db.close()
+        raise HTTPException(status_code=404, detail="Session not found")
+    chat_session.title = session.title
+    db.commit()
+    db.refresh(chat_session)
+    db.close()
+    return {"id": chat_session.id, "title": chat_session.title}
+
 @app.delete("/sessions/{session_id}")
 def delete_session(session_id: int, current_user: User = Depends(get_current_user)):
     db = SessionLocal()
@@ -174,10 +190,28 @@ def post_message(session_id: int, msg: MessageCreate):
     def event_stream():
         # Call Ollama API
         try:
+            # 取得最新10則歷史訊息
+            history_msgs = (
+                db.query(ChatMessage)
+                .filter_by(session_id=session_id)
+                .order_by(ChatMessage.created_at.desc())
+                .limit(10)
+                .all()
+            )
+            # 由新到舊轉回舊到新順序
+            history_msgs.reverse()
+
+            # 整理成 prompt 格式
+            history_prompt = ""
+            for m in history_msgs:
+                prefix = "Me: " if m.role == "user" else "You: "
+                history_prompt += prefix + m.content.strip() + "\n"
+            print(history_prompt)
+
             full = []
             with requests.post("http://localhost:11434/api/generate", json={
                 "model": msg.model,
-                "prompt": msg.user_msg,
+                "prompt": history_prompt,
                 "stream": True
             }, stream=True) as r:
                 for line in r.iter_lines(chunk_size=512):
